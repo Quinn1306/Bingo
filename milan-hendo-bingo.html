@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Hen Do Bingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400;1,600&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --terracotta: #c9623f;
+    --terracotta-light: #e07a55;
+    --olive: #7a8c5e;
+    --olive-light: #9aad78;
+    --cream: #fdf6ec;
+    --warm-white: #fff9f2;
+    --marble: #f5ede3;
+    --gold: #c9a84c;
+    --gold-light: #e2c06a;
+    --text: #2e1f14;
+    --text-soft: #7a5c4a;
+    --tile-shadow: rgba(100,50,20,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Marble texture background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 25%, rgba(201,98,63,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 75%, rgba(122,140,94,0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.1) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Subtle marble veining */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(
+        118deg,
+        transparent,
+        transparent 60px,
+        rgba(201,98,63,0.03) 60px,
+        rgba(201,98,63,0.03) 61px
+      );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .confetti-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .confetti-bg span { position: absolute; animation: floatEmoji linear infinite; opacity: 0.12; }
+  @keyframes floatEmoji {
+    0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+    10%  { opacity: 0.12; }
+    90%  { opacity: 0.12; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp   { from { opacity: 0; transform: translateY(24px);  } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes popIn    { from { opacity: 0; transform: scale(0.65) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  @keyframes bounce   { 0% { transform: scale(0); } 60% { transform: scale(1.35); } 100% { transform: scale(1); } }
+  @keyframes bingoPulse { 0% { transform: scale(1); } 40% { transform: scale(1.1); } 100% { transform: scale(1); } }
+  @keyframes pulseBtn {
+    0%,100% { box-shadow: 0 6px 22px rgba(201,98,63,0.4); }
+    50%      { box-shadow: 0 10px 34px rgba(201,98,63,0.6); }
+  }
+  @keyframes screenExit   { to { opacity: 0; transform: scale(0.95) translateY(-20px); } }
+  @keyframes screenEnter  { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== ORNAMENTAL DIVIDER ===== */
+  .ornament {
+    text-align: center;
+    color: var(--gold);
+    font-size: 1rem;
+    letter-spacing: 10px;
+    margin: 16px 0;
+    opacity: 0.7;
+  }
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 14px 0; color: var(--gold);
+    font-size: 0.85rem; letter-spacing: 4px; opacity: 0.7;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+  }
+
+  /* ===== INTRO SCREEN ===== */
+  #introScreen {
+    position: relative; z-index: 10;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 36px 20px 52px;
+    max-width: 480px; margin: 0 auto;
+  }
+
+  .intro-hero { text-align: center; margin-bottom: 28px; animation: fadeDown 0.8s ease both; }
+
+  .intro-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: var(--terracotta);
+    margin-bottom: 10px;
+    opacity: 0.85;
+  }
+
+  .intro-hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.4rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.0;
+  }
+  .intro-hero h1 em {
+    font-style: italic;
+    color: var(--terracotta);
+    display: block;
+    font-size: 3.8rem;
+  }
+
+  .intro-tagline {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-soft);
+    letter-spacing: 1px;
+  }
+
+  /* Cards */
+  .rules-card, .oath-card {
+    background: var(--warm-white);
+    border-radius: 20px;
+    border: 1px solid rgba(201,98,63,0.15);
+    padding: 24px 22px 20px;
+    width: 100%;
+    box-shadow: 0 6px 28px rgba(100,50,20,0.1);
+    margin-bottom: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .rules-card { animation: fadeUp 0.7s 0.15s ease both; }
+  .oath-card  { animation: fadeUp 0.7s 0.3s  ease both; }
+
+  /* Italian border accent */
+  .rules-card::before, .oath-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(to right, var(--olive), var(--gold), var(--terracotta), var(--gold), var(--olive));
+  }
+
+  /* Corner ornament */
+  .rules-card::after, .oath-card::after {
+    content: '✦';
+    position: absolute; bottom: 10px; right: 14px;
+    font-size: 0.7rem; color: var(--gold); opacity: 0.4;
+  }
+
+  .rules-title, .oath-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--terracotta);
+    margin-bottom: 14px;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  .rule-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid rgba(201,98,63,0.12);
+  }
+  .rule-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .rule-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+  .rule-text { font-size: 0.87rem; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .rule-text span { color: var(--terracotta); }
+
+  .oath-subtitle {
+    font-size: 0.75rem; color: var(--text-soft); text-align: center;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;
+  }
+
+  .oath-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 11px 14px; border-radius: 12px; margin-bottom: 8px;
+    cursor: pointer; transition: background 0.2s;
+    border: 1.5px solid rgba(201,98,63,0.18);
+    -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  .oath-item:last-child { margin-bottom: 0; }
+  .oath-item:active { transform: scale(0.98); }
+  .oath-item.checked {
+    background: rgba(201,98,63,0.07);
+    border-color: var(--terracotta);
+  }
+
+  .oath-checkbox {
+    width: 26px; height: 26px; border-radius: 7px;
+    border: 2px solid var(--terracotta); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; color: white; background: white;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .oath-item.checked .oath-checkbox {
+    background: linear-gradient(135deg, var(--terracotta-light), var(--terracotta));
+    border-color: var(--terracotta);
+  }
+
+  .oath-text { font-size: 0.85rem; font-weight: 700; color: var(--text); line-height: 1.35; flex: 1; }
+  .oath-item.checked .oath-text { color: var(--terracotta); }
+
+  .oath-progress {
+    text-align: center; font-size: 0.8rem; font-weight: 800;
+    color: var(--text-soft); margin-top: 14px; transition: color 0.3s;
+  }
+  .oath-progress.all-done { color: var(--terracotta); }
+
+  .start-btn {
+    width: 100%; max-width: 320px;
+    background: linear-gradient(135deg, var(--terracotta-light), var(--terracotta));
+    color: white; border: none;
+    font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.05rem;
+    padding: 18px 32px; border-radius: 50px; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 2px;
+    box-shadow: 0 6px 22px rgba(201,98,63,0.4);
+    transition: transform 0.15s, opacity 0.3s;
+    animation: fadeUp 0.7s 0.45s ease both;
+    opacity: 0.35; pointer-events: none;
+  }
+  .start-btn.ready { opacity: 1; pointer-events: auto; animation: pulseBtn 2.2s ease infinite; }
+  .start-btn:active { transform: scale(0.97); }
+  .screen-exit  { animation: screenExit  0.48s ease forwards; }
+  .screen-enter { animation: screenEnter 0.6s 0.1s ease both; }
+
+  /* ===== BINGO SCREEN ===== */
+  #bingoScreen { display: none; position: relative; z-index: 10; max-width: 480px; margin: 0 auto; padding: 28px 16px 52px; }
+  #bingoScreen.visible { display: block; }
+
+  .header { text-align: center; margin-bottom: 6px; animation: fadeDown 0.7s ease both; }
+
+  .header-eyebrow {
+    font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 4px; color: var(--terracotta); opacity: 0.8; margin-bottom: 6px;
+  }
+
+  .header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem; font-weight: 700; color: var(--text); line-height: 1.0;
+  }
+  .header h1 span { font-style: italic; color: var(--terracotta); }
+  .subtitle { font-size: 0.82rem; color: var(--text-soft); margin-top: 8px; font-weight: 600; letter-spacing: 0.3px; }
+
+  /* Progress */
+  .progress-wrap {
+    background: var(--warm-white);
+    border: 1px solid rgba(201,98,63,0.15);
+    border-radius: 18px; padding: 14px 20px;
+    box-shadow: 0 4px 16px rgba(100,50,20,0.09); margin-bottom: 16px;
+    animation: fadeDown 0.7s 0.2s ease both;
+  }
+  .progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .progress-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-soft); }
+  .progress-count { font-size: 1rem; font-weight: 900; color: var(--terracotta); }
+  .progress-track { height: 9px; background: rgba(201,98,63,0.15); border-radius: 10px; overflow: hidden; }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--olive-light), var(--terracotta-light), var(--terracotta));
+    border-radius: 10px; transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1); width: 0%;
+  }
+  .progress-milestone { font-size: 0.72rem; color: var(--text-soft); font-weight: 700; text-align: right; margin-top: 5px; }
+  .progress-milestone.lit { color: var(--terracotta); }
+
+  /* Grid */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; animation: fadeUp 0.8s 0.3s ease both; }
+
+  .tile {
+    background: var(--warm-white);
+    border: 1px solid rgba(201,98,63,0.15);
+    border-radius: 13px; padding: 10px 5px;
+    text-align: center; cursor: pointer;
+    box-shadow: 0 2px 8px var(--tile-shadow);
+    transition: transform 0.15s, background 0.25s, border-color 0.25s;
+    min-height: 86px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+    position: relative; overflow: hidden;
+  }
+  .tile::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(145deg, rgba(255,255,255,0.6), transparent);
+    pointer-events: none;
+  }
+  .tile:active { transform: scale(0.93); }
+
+  .tile.done {
+    background: linear-gradient(135deg, var(--terracotta-light), var(--terracotta));
+    border-color: var(--terracotta);
+    box-shadow: 0 4px 14px rgba(201,98,63,0.35);
+  }
+  .tile.done .tile-text { color: white; }
+  .tile.done .tick { display: flex; }
+
+  .tile.bingo-gold {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold)) !important;
+    border-color: var(--gold) !important;
+    box-shadow: 0 4px 18px rgba(201,168,76,0.5) !important;
+    animation: bingoPulse 0.5s ease;
+  }
+  .tile.bingo-gold .tile-text { color: white !important; }
+
+  .tile-emoji { font-size: 1.4rem; display: block; line-height: 1; }
+  .tile-text {
+    font-size: 0.62rem; font-weight: 700; color: var(--text);
+    line-height: 1.25; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .tick { display: none; position: absolute; top: 4px; right: 6px; font-size: 0.72rem; color: rgba(255,255,255,0.9); }
+
+  .reset-btn {
+    display: block; margin: 20px auto 0;
+    background: transparent;
+    border: 1.5px solid var(--terracotta); color: var(--terracotta);
+    font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.8rem;
+    padding: 10px 28px; border-radius: 50px; cursor: pointer;
+    letter-spacing: 1px; text-transform: uppercase; transition: background 0.2s, color 0.2s;
+  }
+  .reset-btn:hover { background: var(--terracotta); color: white; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(46,31,20,0.6); backdrop-filter: blur(6px); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.visible { display: flex; animation: fadeIn 0.3s ease; }
+
+  .modal {
+    background: var(--warm-white); border-radius: 24px;
+    padding: 38px 28px 30px; text-align: center; max-width: 340px; width: 100%;
+    box-shadow: 0 24px 64px rgba(100,50,20,0.3);
+    animation: popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+    position: relative; overflow: hidden;
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+  .modal::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+    background: linear-gradient(to right, var(--olive), var(--gold), var(--terracotta), var(--gold), var(--olive));
+  }
+  .modal-emoji { font-size: 3.6rem; display: block; animation: bounce 0.6s 0.2s ease both; }
+  .modal h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem; color: var(--terracotta); margin: 6px 0 2px; font-style: italic; font-weight: 700;
+  }
+  .modal-sub { font-size: 0.78rem; color: var(--text-soft); font-weight: 700; margin-bottom: 16px; }
+  .modal-prize-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-soft); font-weight: 700; margin-bottom: 8px; }
+  .modal-prize {
+    font-size: 1.05rem; font-weight: 800; color: var(--text);
+    background: var(--marble); border-radius: 12px;
+    padding: 14px 16px; margin: 0 0 22px; line-height: 1.5;
+    border: 1px solid rgba(201,98,63,0.15);
+  }
+  .modal-close {
+    background: linear-gradient(135deg, var(--terracotta-light), var(--terracotta));
+    color: white; border: none;
+    font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.88rem;
+    padding: 13px 34px; border-radius: 50px; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1px;
+    box-shadow: 0 4px 14px rgba(201,98,63,0.4); transition: transform 0.15s;
+  }
+  .modal-close:active { transform: scale(0.96); }
+
+  #fireworks { position: fixed; inset: 0; pointer-events: none; z-index: 150; }
+</style>
+</head>
+<body>
+
+<div class="confetti-bg" id="confettiBg"></div>
+<canvas id="fireworks"></canvas>
+
+<!-- INTRO SCREEN -->
+<div id="introScreen">
+  <div class="intro-hero">
+    <div class="intro-eyebrow">✦ Milano ✦</div>
+    <h1>Hen Do<em>Bingo</em></h1>
+    <div class="ornament">— ✦ —</div>
+    <p class="intro-tagline">What happens in Milan… stays in Milan</p>
+  </div>
+
+  <div class="rules-card">
+    <div class="rules-title">Le Regole — The Rules</div>
+    <div class="rule-item">
+      <div class="rule-icon">🎯</div>
+      <div class="rule-text">There are <span>16 challenges</span> on your card. Complete them out in the wild — then tap the square to mark it off.</div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-icon">🏆</div>
+      <div class="rule-text">Complete <span>10 squares</span> and you get <span>BINGO!</span> A prize will be revealed — and yes, you absolutely have to do it.</div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-icon">📵</div>
+      <div class="rule-text">No lying. No skipping. No <span>"I was too shy."</span> Shy girls don't get free drinks in Milan.</div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-icon">👑</div>
+      <div class="rule-text">The bride gets <span>extra bragging rights</span> for every challenge she completes. Obviously.</div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-icon">🤫</div>
+      <div class="rule-text">What happens in Milan <span>stays in Milan.</span> Unless it's embarrassing — then it gets posted.</div>
+    </div>
+  </div>
+
+  <div class="oath-card">
+    <div class="oath-title">Il Giuramento — The Oath</div>
+    <div class="oath-subtitle">Tick every box to unlock the card</div>
+    <div class="oath-item" onclick="toggleOath(this)">
+      <div class="oath-checkbox"></div>
+      <div class="oath-text">I solemnly swear I am up to absolutely no good 😇</div>
+    </div>
+    <div class="oath-item" onclick="toggleOath(this)">
+      <div class="oath-checkbox"></div>
+      <div class="oath-text">I will embarrass myself for the good of the group 💃</div>
+    </div>
+    <div class="oath-item" onclick="toggleOath(this)">
+      <div class="oath-checkbox"></div>
+      <div class="oath-text">I will not grass on anyone. What happens in Milan, stays in Milan 🤐</div>
+    </div>
+    <div class="oath-item" onclick="toggleOath(this)">
+      <div class="oath-checkbox"></div>
+      <div class="oath-text">I accept that the bride's word is law and cannot be appealed 👰</div>
+    </div>
+    <div class="oath-item" onclick="toggleOath(this)">
+      <div class="oath-checkbox"></div>
+      <div class="oath-text">I am ready to have the most iconic night of my life 🥂</div>
+    </div>
+    <div class="oath-progress" id="oathProgress">0 / 5 sworn in — come on girls! 💅</div>
+  </div>
+
+  <button class="start-btn" id="startBtn" onclick="startGame()">
+    Andiamo — Let's Go! 🔥
+  </button>
+</div>
+
+<!-- BINGO SCREEN -->
+<div id="bingoScreen">
+  <div class="header">
+    <div class="header-eyebrow">✦ Milano ✦</div>
+    <h1>Hen Do <span>Bingo</span></h1>
+    <p class="subtitle">Complete 10 challenges anywhere on the card to get BINGO!</p>
+  </div>
+
+  <div class="divider">✦</div>
+
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span class="progress-label">Challenges Done</span>
+      <span class="progress-count"><span id="doneCount">0</span> / 16</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-milestone" id="progressMilestone">Complete 10 to get BINGO! 🎯</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <button class="reset-btn" onclick="resetCard()">↺ Reset Card</button>
+</div>
+
+<!-- BINGO MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <span class="modal-emoji">🏆</span>
+    <h2>Bingo!</h2>
+    <p class="modal-sub">10 challenges smashed, bella! 🎉</p>
+    <p class="modal-prize-label">✦ Your Prize ✦</p>
+    <div class="modal-prize" id="modalPrize"></div>
+    <button class="modal-close" onclick="closeModal()">Ciao bella! 💋</button>
+  </div>
+</div>
+
+<script>
+  let oathCount = 0;
+  const oathMessages = [
+    "0 / 5 sworn in — come on girls! 💅",
+    "1 / 5 — a little commitment, finally 😏",
+    "2 / 5 — getting there, bellas! 💃",
+    "3 / 5 — more than halfway! 🔥",
+    "4 / 5 — one more and we're off! 🥂",
+    "5 / 5 — all sworn in! Andiamo!! 🎉"
+  ];
+
+  function toggleOath(el) {
+    const wasChecked = el.classList.contains('checked');
+    el.classList.toggle('checked');
+    el.querySelector('.oath-checkbox').textContent = wasChecked ? '' : '✓';
+    oathCount += wasChecked ? -1 : 1;
+    const prog = document.getElementById('oathProgress');
+    prog.textContent = oathMessages[oathCount];
+    prog.className = 'oath-progress' + (oathCount === 5 ? ' all-done' : '');
+    document.getElementById('startBtn').classList.toggle('ready', oathCount === 5);
+  }
+
+  function startGame() {
+    const intro = document.getElementById('introScreen');
+    intro.classList.add('screen-exit');
+    setTimeout(() => {
+      intro.style.display = 'none';
+      const bingo = document.getElementById('bingoScreen');
+      bingo.classList.add('visible', 'screen-enter');
+      renderGrid();
+    }, 480);
+  }
+
+  const TILES = [
+    { emoji: "🍊", text: "Drink an Aperol Spritz" },
+    { emoji: "🗣️", text: "Order a drink in Italian" },
+    { emoji: "🎁", text: "Get a free drink" },
+    { emoji: "📱", text: "Make a TikTok" },
+    { emoji: "⛪", text: "Take a pic at the Duomo" },
+    { emoji: "💃", text: "Dance with a stranger" },
+    { emoji: "📞", text: "Get a stranger's number" },
+    { emoji: "🥃", text: "Convince a stranger to do a shot with you" },
+    { emoji: "🛵", text: "Find a Vespa & take a pic" },
+    { emoji: "🍦", text: "Eat gelato & get it on your face" },
+    { emoji: "👑", text: "Get a man to wear your hen do accessories" },
+    { emoji: "🎭", text: "Get a photo with a street performer" },
+    { emoji: "🥂", text: "Do a group shot at the same time" },
+    { emoji: "🤌", text: "Learn a dirty Italian word from a stranger" },
+    { emoji: "🎵", text: "Sing an Italian song together" },
+    { emoji: "🌿", text: "Learn an Italian gesture & use it" },
+  ];
+
+  const PRIZES = [
+    "🥃 The whole group buys you a shot — salute, bella!",
+    "😈 You pick someone to do a dare — no excuses, no backing out!",
+  ];
+
+  const BINGO_THRESHOLD = 10;
+  let state = Array(16).fill(false);
+  let bingoTriggered = false;
+
+  function renderGrid() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    TILES.forEach((t, i) => {
+      const div = document.createElement('div');
+      div.className = 'tile' + (state[i] ? ' done' : '');
+      div.innerHTML = `<span class="tick">✓</span><span class="tile-emoji">${t.emoji}</span><span class="tile-text">${t.text}</span>`;
+      div.addEventListener('click', () => toggleTile(i));
+      grid.appendChild(div);
+    });
+    updateProgress();
+  }
+
+  function toggleTile(i) {
+    state[i] = !state[i];
+    renderGrid();
+    checkBingo();
+  }
+
+  function updateProgress() {
+    const done = state.filter(Boolean).length;
+    document.getElementById('doneCount').textContent = done;
+    document.getElementById('progressFill').style.width = (done / 16 * 100) + '%';
+    const milestone = document.getElementById('progressMilestone');
+    if (done >= BINGO_THRESHOLD) {
+      milestone.textContent = '🎉 BINGO achieved! Keep going for the full house!';
+      milestone.classList.add('lit');
+    } else {
+      milestone.textContent = (BINGO_THRESHOLD - done) + ' more to go for BINGO! 🎯';
+      milestone.classList.remove('lit');
+    }
+  }
+
+  function checkBingo() {
+    const done = state.filter(Boolean).length;
+    if (done >= BINGO_THRESHOLD && !bingoTriggered) {
+      bingoTriggered = true;
+      const tiles = document.querySelectorAll('.tile');
+      state.forEach((s, i) => { if (s) tiles[i].classList.add('bingo-gold'); });
+      setTimeout(showBingo, 400);
+    }
+  }
+
+  function showBingo() {
+    document.getElementById('modalPrize').textContent = PRIZES[Math.floor(Math.random() * PRIZES.length)];
+    document.getElementById('modal').classList.add('visible');
+    launchFireworks();
+  }
+
+  function closeModal() { document.getElementById('modal').classList.remove('visible'); }
+
+  function resetCard() {
+    if (!confirm('Reset the whole card?')) return;
+    state = Array(16).fill(false);
+    bingoTriggered = false;
+    renderGrid();
+  }
+
+  // Floating background — Italian themed, no flags
+  const bgEmojis = ['🌹','🏛️','🥂','🍊','💃','🌿','✨','🎉','💋','🤌','🌸','🏺'];
+  const bg = document.getElementById('confettiBg');
+  for (let i = 0; i < 18; i++) {
+    const span = document.createElement('span');
+    span.textContent = bgEmojis[i % bgEmojis.length];
+    span.style.left = Math.random() * 100 + '%';
+    span.style.animationDuration = (10 + Math.random() * 14) + 's';
+    span.style.animationDelay = (Math.random() * 12) + 's';
+    span.style.fontSize = (1 + Math.random() * 1.2) + 'rem';
+    bg.appendChild(span);
+  }
+
+  // Fireworks
+  const canvas = document.getElementById('fireworks');
+  const ctx = canvas.getContext('2d');
+  let particles = [], animating = false;
+  function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+
+  function launchFireworks() {
+    particles = [];
+    const colors = ['#c9623f','#e07a55','#c9a84c','#e2c06a','#7a8c5e','#9aad78','#fff','#fdf6ec'];
+    for (let b = 0; b < 7; b++) {
+      const cx = 0.15*window.innerWidth + Math.random()*0.7*window.innerWidth;
+      const cy = 0.1*window.innerHeight + Math.random()*0.55*window.innerHeight;
+      for (let p = 0; p < 50; p++) {
+        const angle = Math.random()*Math.PI*2, speed = 2+Math.random()*6;
+        particles.push({ x:cx, y:cy, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, alpha:1, color:colors[Math.floor(Math.random()*colors.length)], size:3+Math.random()*4, decay:0.01+Math.random()*0.013 });
+      }
+    }
+    if (!animating) animateFireworks();
+  }
+
+  function animateFireworks() {
+    animating = true;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vy+=0.09; p.alpha-=p.decay; ctx.globalAlpha=Math.max(0,p.alpha); ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); });
+    particles = particles.filter(p => p.alpha > 0);
+    if (particles.length > 0) requestAnimationFrame(animateFireworks);
+    else { animating = false; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  }
+</script>
+</body>
+</html>
